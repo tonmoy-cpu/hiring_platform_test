@@ -90,8 +90,7 @@ router.post("/register", uploadMiddleware, async (req, res) => {
         console.log("Parsing PDF");
         const pdfData = await pdfParse(dataBuffer);
         const resumeText = pdfData.text;
-          const parsedData = await extractResumeDetails(resumeText, null);
-        const parsedData = await extractResumeDetails(resumeText);
+        const parsedData = await extractResumeDetails(resumeText, null);
           user.resumeFile = `/uploads/${resumeFile.filename}`;
         user.resumeParsed = parsedData;
         console.log("Saving parsed resume data");

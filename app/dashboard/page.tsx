@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredJobId, setHoveredJobId] = useState(null);
   const router = useRouter();
+  const [jobsLoaded, setJobsLoaded] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -71,6 +72,7 @@ export default function Dashboard() {
         setPreferredDomains(profile.preferredDomains || []);
         setHasPreferences(profile.preferredSkills?.length > 0 || profile.preferredDomains?.length > 0);
         setJobs(jobsData);
+        setJobsLoaded(true);
         setAppliedJobs(appsData.map((app) => app.job._id));
         setApplications(appsData); // Set applications
 
@@ -332,7 +334,7 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.slice(0, 6).map((job, index) => (
+            {jobsLoaded && jobs && jobs.length > 0 ? jobs.slice(0, 6).map((job, index) => (
               <div
                 key={job._id}
                 className="card job-card group"
@@ -427,7 +429,13 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-400">
+                  {isLoading ? "Loading jobs..." : "No jobs available at the moment."}
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
