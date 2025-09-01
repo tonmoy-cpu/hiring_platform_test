@@ -37,11 +37,44 @@ export async function fetchResumeFeedback(token: string, jobId: string, resumeTe
   if (!res.ok) throw new Error("Failed to fetch feedback");
   const data = await res.json();
   console.log("Raw API response in fetchResumeFeedback:", data);
-  // Map the response to match the feedback state structure, prioritizing matchScore if present
+  
+  // Enhanced response mapping with better error handling
   return {
-    score: data.matchScore !== undefined ? data.matchScore : (data.score || 0),
+    score: data.score || data.matchScore || 0,
     matchedSkills: data.matchedSkills || [],
-    missingSkills: data.missingSkills || [],
+    missingSkills: Array.isArray(data.missingSkills) ? data.missingSkills : [],
     feedback: data.feedback || [],
+    extractedSkills: data.extractedSkills || [],
+    resumeData: data.resumeData || null
+  };
+}
+
+// Enhanced skill matching utility
+export function calculateSkillMatch(resumeSkills: string[], jobSkills: string[]) {
+  if (!jobSkills || jobSkills.length === 0) return { matched: [], missing: jobSkills || [] };
+  
+  const matched = jobSkills.filter(jobSkill =>
+    resumeSkills.some(resumeSkill =>
+      resumeSkill.toLowerCase().includes(jobSkill.toLowerCase()) ||
+      jobSkill.toLowerCase().includes(resumeSkill.toLowerCase())
+    )
+  );
+  
+  const missing = jobSkills.filter(jobSkill => !matched.includes(jobSkill));
+  
+  return { matched, missing };
+}
+
+// Utility for generating loading states
+export function createLoadingToast(message: string, id: string) {
+  return {
+    loading: true,
+    duration: Infinity,
+    id,
+    style: {
+      background: "var(--accent)",
+      color: "var(--foreground)",
+      borderRadius: "8px",
+    },
   };
 }

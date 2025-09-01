@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState([]); // Notifications state
   const [socket, setSocket] = useState(null); // Socket.IO instance
   const [isLoading, setIsLoading] = useState(true);
+  const [hoveredJobId, setHoveredJobId] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -335,8 +336,16 @@ export default function Dashboard() {
               <div
                 key={job._id}
                 className="card job-card group"
-                onMouseEnter={() => setHoveredJob(job)}
-                onMouseLeave={() => setHoveredJob(null)}
+                onMouseEnter={() => {
+                  if (hoveredJobId !== job._id) {
+                    setHoveredJob(job);
+                    setHoveredJobId(job._id);
+                  }
+                }}
+                onMouseLeave={() => {
+                  setHoveredJob(null);
+                  setHoveredJobId(null);
+                }}
                 style={{animationDelay: `${index * 0.1}s`}}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -385,7 +394,7 @@ export default function Dashboard() {
                   </button>
                 </div>
                 
-                {hoveredJob === job && (
+                {hoveredJob === job && hoveredJobId === job._id && (
                   <div className="absolute top-0 left-0 w-full h-full bg-accent bg-opacity-95 p-4 rounded-lg shadow-lg z-10 animate-fade-in flex flex-col">
                     <h4 className="text-primary font-semibold mb-2">Skills Match Analysis</h4>
                     <div className="flex-1 overflow-y-auto">
@@ -407,7 +416,11 @@ export default function Dashboard() {
                     </div>
                     <button 
                       className="mt-4 btn-primary w-full"
-                      onClick={() => setHoveredJob(null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHoveredJob(null);
+                        setHoveredJobId(null);
+                      }}
                     >
                       Close
                     </button>

@@ -32,9 +32,14 @@ router.post("/", auth, async (req, res) => {
 router.get("/", auth, async (req, res) => {
   try {
     console.log("GET /api/jobs - Query:", req.query);
+    console.log("User type:", req.user.userType, "User ID:", req.user.id);
     let jobs;
     if (req.user.userType === "candidate") {
       const user = await User.findById(req.user.id);
+      console.log("User preferences:", {
+        preferredSkills: user.preferredSkills,
+        preferredDomains: user.preferredDomains
+      });
       const appliedJobs = await Application.find({ candidate: req.user.id }).select("job");
       const appliedJobIds = appliedJobs.map((app) => app.job.toString());
 
@@ -44,24 +49,64 @@ router.get("/", auth, async (req, res) => {
         jobs = await Job.find(includeClosed ? {} : { isClosed: false }).populate("recruiter", "username");
       } else {
         console.log("Fetching preference-matched jobs for candidate");
-        const preferredSkills = (user.preferredSkills || []).map((s) => s.toLowerCase());
-        const preferredDomains = (user.preferredDomains || []).map((d) => d.toLowerCase());
+        const preferredSkills = user.preferredSkills || [];
+        const preferredDomains = user.preferredDomains || [];
+        
+        console.log("Filtering with preferences:", { preferredSkills, preferredDomains });
+        
+        if (preferredSkills.length === 0 && preferredDomains.length === 0) {
+          // If no preferences set, show all open jobs
+          jobs = await Job.find({ isClosed: false }).populate("recruiter", "username");
+        } else {
+          const skillRegexes = preferredSkills.map(skill => new RegExp(skill, "i"));
+          const domainRegexes = preferredDomains.map(domain => new RegExp(domain, "i"));
+          
+          const query = {
+            isClosed: false,
+            $or: []
+          };
+          
+          if (skillRegexes.length > 0) {
+            query.$or.push({ skills: { $in: skillRegexes } });
+          }
+          
+          if (domainRegexes.length > 0) {
+            query.$or.push({ details: { $in: domainRegexes } });
+          }
+          
+          jobs = await Job.find(query).populate("recruiter", "username");
+          console.log("Found preference-matched jobs:", jobs.length);
+        }
 
-        jobs = await Job.find({
-          isClosed: false,
-          $or: [
-            {
-              skills: {
-                $in: preferredSkills.map((s) => new RegExp(s, "i")),
-              },
-            },
-            {
-              details: {
-                $in: preferredDomains.map((d) => new RegExp(d, "i")),
-              },
-            },
-          ],
-        }).populate("recruiter", "username");
+        // Sort by relevance score
+        jobs = jobs.map(job => {
+          let relevanceScore = 0;
+          
+          // Skill matching score
+          const jobSkills = job.skills || [];
+          const matchedSkillsCount = jobSkills.filter(jobSkill =>
+            preferredSkills.some(prefSkill =>
+              jobSkill.toLowerCase().includes(prefSkill.toLowerCase()) ||
+              prefSkill.toLowerCase().includes(jobSkill.toLowerCase())
+            )
+          ).length;
+          
+          if (jobSkills.length > 0) {
+            relevanceScore += (matchedSkillsCount / jobSkills.length) * 70;
+          }
+          
+          // Domain matching score
+          const domainMatch = preferredDomains.some(domain =>
+            job.details.toLowerCase().includes(domain.toLowerCase()) ||
+            domain.toLowerCase().includes(job.details.toLowerCase())
+          );
+          
+          if (domainMatch) {
+            relevanceScore += 30;
+          }
+          
+          return { ...job._doc, relevanceScore };
+        }).sort((a, b) => b.relevanceScore - a.relevanceScore);
       }
 
       jobs = jobs.map((job) => ({
@@ -140,6 +185,30 @@ router.put("/:id/close", auth, async (req, res) => {
     res.json(job);
   } catch (err) {
     console.error("Error in PUT /jobs/:id/close:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+router.delete("/:id", auth, async (req, res) => {
+  if (req.user.userType !== "recruiter")
+    return res.status(403).json({ msg: "Not authorized" });
+
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ msg: "Job not found" });
+    if (job.recruiter.toString() !== req.user.id) {
+      return res.status(403).json({ msg: "Not authorized to delete this job" });
+    }
+
+    // Delete associated applications
+    await Application.deleteMany({ job: req.params.id });
+    
+    // Delete the job
+    await Job.findByIdAndDelete(req.params.id);
+    
+    res.json({ msg: "Job and associated applications deleted successfully" });
+  } catch (err) {
+    console.error("Error in DELETE /jobs/:id:", err);
     res.status(500).json({ msg: "Server error" });
   }
 });

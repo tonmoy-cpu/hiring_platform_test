@@ -11,6 +11,7 @@ export default function ResumeExtraction() {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [jobId, setJobId] = useState(""); // Add job ID state
+  const [extractionProgress, setExtractionProgress] = useState(0);
   const router = useRouter();
 
   const handleFileChange = (e) => {
@@ -25,27 +26,42 @@ export default function ResumeExtraction() {
     }
 
     setIsLoading(true);
+    setExtractionProgress(0);
     setError(null);
     const formData = new FormData();
     formData.append("resume", resumeFile);
 
     const token = localStorage.getItem("token");
     try {
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setExtractionProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+      
+      toast.loading("Extracting resume data...", { id: "extracting" });
+      
       const res = await fetch("http://localhost:5000/api/resume/extract", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
       const data = await res.json();
+      
+      clearInterval(progressInterval);
+      setExtractionProgress(100);
+      
       if (!res.ok) throw new Error(data.error || data.msg || "Extraction failed");
       setParsedData(data.parsedData);
+      toast.dismiss("extracting");
       toast.success("Resume parsed and added to your profile!"); // Use toast
     } catch (err) {
       console.error("Error extracting resume:", err.message);
       setError(err.message);
+      toast.dismiss("extracting");
       toast.error(`Error: ${err.message}`); // Use toast
     } finally {
       setIsLoading(false);
+      setExtractionProgress(0);
     }
   };
 
@@ -102,8 +118,33 @@ export default function ResumeExtraction() {
             className="btn-primary mt-4" // Use btn-primary
             disabled={isLoading}
           >
-            {isLoading ? "Extracting..." : "Extract"}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Extracting... {extractionProgress}%
+              </span>
+            ) : (
+              "Extract Resume Data"
+            )}
           </button>
+          
+          {isLoading && (
+            <div className="mt-4">
+              <div className="progress-bar">
+                <div 
+                  className="progress-bar-fill transition-all duration-500"
+                  style={{ width: `${extractionProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-gray-400 mt-2 text-center">
+                Processing your resume with AI...
+              </p>
+            </div>
+          )}
+          
           {error && <p className="text-danger mt-4">{error}</p>} {/* Use text-danger */}
         </div>
         {parsedData && (

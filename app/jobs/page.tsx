@@ -29,6 +29,8 @@ export default function Jobs() {
   const [notifications, setNotifications] = useState([]);
   const [socket, setSocket] = useState(null);
   const [showResumeBuilder, setShowResumeBuilder] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const router = useRouter();
   const messageInputRef = useRef(null); // Ref for the message textarea
 
@@ -110,11 +112,14 @@ export default function Jobs() {
       return;
     }
 
+    setIsApplying(true);
     const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("resume", resumeFile);
 
     try {
+      toast.loading("Processing your application...", { id: "applying" });
+      
       const extractRes = await fetch("http://localhost:5000/api/resume/extract", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -136,14 +141,18 @@ export default function Jobs() {
       setShowApplyModal(null);
       setResumeFile(null);
       setCoverLetter("");
+      toast.dismiss("applying");
       toast.success("Application submitted successfully!");
     } catch (err) {
       console.error("Error applying:", err.message);
+      toast.dismiss("applying");
       toast.error(`Error applying: ${err.message}`);
       if (err.message.includes("401")) {
         localStorage.removeItem("token");
         router.push("/");
       }
+    } finally {
+      setIsApplying(false);
     }
   };
 
@@ -153,8 +162,11 @@ export default function Jobs() {
       return;
     }
 
+    setIsAnalyzing(true);
     const token = localStorage.getItem("token");
     try {
+      toast.loading("Analyzing your resume...", { id: "analyzing" });
+      
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Resume = reader.result.split(",")[1];
@@ -167,24 +179,22 @@ export default function Jobs() {
         if (!analyzeRes.ok) throw new Error(`Analysis failed: ${analyzeRes.status}`);
         const result = await analyzeRes.json();
         console.log("Frontend received analysis result:", JSON.stringify(result, null, 2));
-        if (!result.missingSkills || !result.feedback) {
-          const job = jobs.find(j => j._id === jobId);
-          const resumeSkills = result.extractedSkills || [];
-          const missingSkills = job.skills.filter(skill => !resumeSkills.includes(skill));
-          const feedback = missingSkills.length > 0 ? [`Consider upskilling in: ${missingSkills.join(", ")}`] : ["Your skills align well with this job!"];
-          setAnalysisResult({ ...result, missingSkills, feedback });
-        } else {
-          setAnalysisResult(result);
-        }
+        
+        setAnalysisResult(result);
+        toast.dismiss("analyzing");
+        toast.success("Analysis completed!");
       };
       reader.readAsDataURL(resumeFile);
     } catch (err) {
       console.error("Error analyzing resume:", err.message);
+      toast.dismiss("analyzing");
       toast.error(`Error analyzing resume: ${err.message}`);
       if (err.message.includes("401")) {
         localStorage.removeItem("token");
         router.push("/");
       }
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -381,7 +391,7 @@ export default function Jobs() {
               <div className="mt-4 flex justify-end space-x-2">
                 <button
                   onClick={() => setShowAnalyzeModal(job)}
-                  className="btn-secondary" /* Use btn-secondary */
+                  className="btn-secondary"
                 >
                   Analyze Resume
                 </button>
@@ -395,14 +405,14 @@ export default function Jobs() {
                       toast.error("Chat not available for this job yet. Please apply first!");
                     }
                   }}
-                  className="btn-secondary" /* Use btn-secondary */
+                  className="btn-secondary"
                 >
                   Chat
                 </button>
                 <button
                   onClick={() => (appliedJobs.includes(job._id) ? null : setShowApplyModal(job))}
                   disabled={appliedJobs.includes(job._id) || job.isClosed}
-                  className={`btn-primary ${ /* Use btn-primary */
+                  className={`btn-primary ${
                     appliedJobs.includes(job._id) || job.isClosed
                       ? "opacity-50 cursor-not-allowed"
                       : ""
@@ -412,7 +422,7 @@ export default function Jobs() {
                 </button>
                 <button
                   onClick={() => setShowResumeBuilder(true)}
-                  className="btn-secondary" /* Use btn-secondary */
+                  className="btn-secondary"
                 >
                   Build Resume
                 </button>
@@ -448,15 +458,26 @@ export default function Jobs() {
                 <div className="flex justify-end space-x-2">
                   <button
                     onClick={() => setShowApplyModal(null)}
-                    className="btn-secondary" /* Use btn-secondary */
+                    className="btn-secondary"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => handleApply(showApplyModal._id)}
-                    className="btn-primary" /* Use btn-primary */
+                    className={`btn-primary ${isApplying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isApplying}
                   >
-                    Submit
+                    {isApplying ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Submitting...
+                      </span>
+                    ) : (
+                      "Submit Application"
+                    )}
                   </button>
                 </div>
               </div>
@@ -482,31 +503,59 @@ export default function Jobs() {
                 </div>
                 {analysisResult ? (
                   <div className="text-foreground"> {/* Use text-foreground */}
-                    <p className="font-semibold"><strong>Eligibility Score:</strong> {analysisResult.matchScore}%</p>
-                    <p className="font-semibold mt-2"><strong>Matched Skills:</strong></p>
-                    <p>{Array.isArray(analysisResult.matchedSkills) && analysisResult.matchedSkills.length > 0 ? analysisResult.matchedSkills.join(", ") : "None"}</p>
-                    <p className="font-semibold mt-2"><strong>Missing Skills:</strong></p>
-                    <ul className="list-disc pl-5">
-                      {Array.isArray(analysisResult.missingSkills) && analysisResult.missingSkills.length > 0 ? (
-                        analysisResult.missingSkills.map((item, index) => (
-                          <li key={index}>
-                            {typeof item === "string" ? item : `${item.skill} - ${item.suggestion}`}
-                          </li>
-                        ))
-                      ) : (
-                        <li>No missing skills identified.</li>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className={`text-3xl font-bold ${analysisResult.score >= 70 ? 'text-success' : analysisResult.score >= 50 ? 'text-warning' : 'text-danger'}`}>
+                          {analysisResult.score || analysisResult.matchScore || 0}%
+                        </div>
+                        <div className="text-sm text-gray-400">Job Compatibility Score</div>
+                      </div>
+                      
+                      {analysisResult.matchedSkills && analysisResult.matchedSkills.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-success mb-2">✓ Your Matching Skills</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {analysisResult.matchedSkills.map((skill, index) => (
+                              <span key={index} className="px-2 py-1 bg-success bg-opacity-20 text-success text-xs rounded-full">
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       )}
-                    </ul>
-                    <p className="font-semibold mt-2"><strong>Feedback:</strong></p>
-                    <ul className="list-disc pl-5">
-                      {Array.isArray(analysisResult.feedback) && analysisResult.feedback.length > 0 ? (
-                        analysisResult.feedback.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))
-                      ) : (
-                        <li>No feedback available. Try uploading a detailed resume.</li>
+                      
+                      {analysisResult.missingSkills && analysisResult.missingSkills.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-warning mb-2">⚠ Skills to Develop</h4>
+                          <div className="space-y-2">
+                            {analysisResult.missingSkills.slice(0, 5).map((item, index) => (
+                              <div key={index} className="text-sm">
+                                <span className="font-medium text-warning">
+                                  {typeof item === "string" ? item : item.skill}
+                                </span>
+                                {typeof item === "object" && item.suggestion && (
+                                  <div className="text-gray-400 text-xs mt-1">{item.suggestion}</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
-                    </ul>
+                      
+                      {analysisResult.feedback && analysisResult.feedback.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-info mb-2">💡 AI Recommendations</h4>
+                          <ul className="space-y-1">
+                            {analysisResult.feedback.map((item, index) => (
+                              <li key={index} className="text-sm text-gray-300 flex items-start gap-2">
+                                <span className="text-info mt-1">•</span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-gray-400">
@@ -520,15 +569,26 @@ export default function Jobs() {
                       setAnalysisResult(null);
                       setResumeFile(null);
                     }}
-                    className="btn-secondary" /* Use btn-secondary */
+                    className="btn-secondary"
                   >
                     Close
                   </button>
                   <button
                     onClick={() => handleAnalyze(showAnalyzeModal._id)}
-                    className="btn-primary" /* Use btn-primary */
+                    className={`btn-primary ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isAnalyzing}
                   >
-                    Analyze
+                    {isAnalyzing ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Analyzing...
+                      </span>
+                    ) : (
+                      "Analyze Resume"
+                    )}
                   </button>
                 </div>
               </div>

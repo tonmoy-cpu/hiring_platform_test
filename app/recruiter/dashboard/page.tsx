@@ -100,6 +100,8 @@ export default function RecruiterDashboard() {
     if (!confirm("Are you sure you want to close this job?")) return;
 
     try {
+      toast.loading("Closing job...", { id: "closing-job" });
+      
       const res = await fetch(`http://localhost:5000/api/jobs/${jobId}/close`, {
         method: "PUT",
         headers: {
@@ -116,9 +118,11 @@ export default function RecruiterDashboard() {
         job._id === jobId ? {...job, isClosed: true} : job
       ));
       
+      toast.dismiss("closing-job");
       toast.success("Job closed successfully!");
     } catch (err) {
       console.error("Close error:", err);
+      toast.dismiss("closing-job");
       toast.error(`Error: ${err.message}`);
     }
   };
@@ -126,6 +130,8 @@ export default function RecruiterDashboard() {
   const handleSaveEdit = async (jobId) => {
     const token = localStorage.getItem("token");
     try {
+      toast.loading("Updating job...", { id: "updating-job" });
+      
       const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
         method: "PUT",
         headers: {
@@ -143,9 +149,11 @@ export default function RecruiterDashboard() {
         prev.map((job) => (job._id === jobId ? updatedJob : job))
       );
       setEditingJob(null);
+      toast.dismiss("updating-job");
       toast.success("Job updated successfully!");
     } catch (err) {
       console.error("Save error:", err);
+      toast.dismiss("updating-job");
       toast.error(`Error: ${err.message}`);
     }
   };
@@ -163,14 +171,51 @@ export default function RecruiterDashboard() {
     }));
   };
 
+  const handleDelete = async (jobId) => {
+    if (!confirm("Are you sure you want to delete this job? This action cannot be undone.")) return;
+    
+    const token = localStorage.getItem("token");
+    try {
+      toast.loading("Deleting job...", { id: "deleting-job" });
+      
+      const res = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.msg || "Failed to delete job");
+      }
+      
+      setJobs((prev) => prev.filter((job) => job._id !== jobId));
+      toast.dismiss("deleting-job");
+      toast.success("Job deleted successfully!");
+    } catch (err) {
+      console.error("Delete error:", err);
+      toast.dismiss("deleting-job");
+      toast.error(`Error: ${err.message}`);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar userType="recruiter" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-full animate-pulse"></div>
+              </div>
+            </div>
             <p className="text-foreground">Loading your dashboard...</p> {/* Use text-foreground */}
+            <div className="mt-2 flex justify-center gap-1">
+              <div className="pulse-dot bg-primary" style={{animationDelay: "0s"}}></div>
+              <div className="pulse-dot bg-primary" style={{animationDelay: "0.2s"}}></div>
+              <div className="pulse-dot bg-primary" style={{animationDelay: "0.4s"}}></div>
+            </div>
           </div>
         </div>
       </div>

@@ -82,20 +82,25 @@ router.post("/register", uploadMiddleware, async (req, res) => {
     if (userType === "candidate" && resumeFile) {
       const pdfPath = resumeFile.path;
       console.log("Processing resume for candidate at:", pdfPath);
+          // Use the enhanced extraction pipeline
+          const { extractResumeDetails } = require("../utils/ai");
       try {
         console.log("Reading PDF");
         const dataBuffer = await fs.readFile(pdfPath);
         console.log("Parsing PDF");
         const pdfData = await pdfParse(dataBuffer);
         const resumeText = pdfData.text;
-        console.log("Extracting resume details");
+          const parsedData = await extractResumeDetails(resumeText, null);
         const parsedData = await extractResumeDetails(resumeText);
+          user.resumeFile = `/uploads/${resumeFile.filename}`;
         user.resumeParsed = parsedData;
         console.log("Saving parsed resume data");
         await user.save();
         console.log("Cleaning up PDF file");
+          console.log("Resume processing completed successfully");
         await fs.unlink(pdfPath);
       } catch (resumeErr) {
+          // Don't fail registration if resume processing fails
         console.error("Resume processing error:", resumeErr.message);
       }
     }

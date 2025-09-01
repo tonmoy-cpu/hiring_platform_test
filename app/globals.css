@@ -54,23 +54,42 @@ body {
   transition: all 0.3s ease;
   border: 1px solid transparent;
   animation: fadeIn 0.5s ease-out;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 100% !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+  position: relative;
+  overflow: hidden;
 }
 
 .job-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
   border-color: var(--primary);
+}
+
+.job-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.job-card:hover::before {
+  opacity: 1;
 }
 
 .form-card {
   background-color: var(--accent);
   animation: fadeIn 0.5s ease-out;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+}
+
+.form-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
 }
 
 .input-field {
@@ -330,6 +349,90 @@ main, .space-y-6 {
   border-radius: 3px;
   background-color: var(--primary);
   transition: width 0.5s ease;
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(203, 166, 247, 0.1) 0%, 
+    rgba(203, 166, 247, 0.3) 50%, 
+    rgba(203, 166, 247, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.analysis-card {
+  @apply bg-background p-4 rounded-lg border border-border;
+  transition: all 0.3s ease;
+}
+
+.analysis-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(203, 166, 247, 0.2);
+}
+
+.score-circle {
+  @apply w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg;
+  background: conic-gradient(var(--primary) 0deg, var(--border) 0deg);
+}
+
+.pulse-dot {
+  @apply w-2 h-2 rounded-full;
+  animation: pulse 2s infinite;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skill-match-indicator {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.skill-matched {
+  background-color: rgba(166, 227, 161, 0.2);
+  color: var(--success);
+}
+
+.skill-missing {
+  background-color: rgba(249, 226, 175, 0.2);
+  color: var(--warning);
+}
+
+.job-card-enhanced {
+  @apply relative overflow-hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.job-card-enhanced:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+}
+
+.job-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--info));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.job-card-enhanced:hover::before {
+  opacity: 1;
 }
 
 .skill-tag {
