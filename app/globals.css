@@ -1,0 +1,346 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #ffffff;
+  --background: #1e1e2e;
+  --accent: #313244;
+  --primary: #cba6f7;
+  --primary-hover: #d8b4ff;
+  --secondary: #f5f5f7;
+  --border: #45475a;
+  --success: #a6e3a1;
+  --danger: #f38ba8;
+  --warning: #f9e2af;
+  --info: #89b4fa;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.job-card {
+  background-color: var(--accent);
+  color: var(--foreground);
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  animation: fadeIn 0.5s ease-out;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.job-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary);
+}
+
+.form-card {
+  background-color: var(--accent);
+  animation: fadeIn 0.5s ease-out;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.input-field {
+  @apply w-full p-3 bg-transparent border rounded-lg transition-all duration-200;
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+.input-field:focus {
+  @apply outline-none ring-2;
+  border-color: var(--primary);
+  ring-color: var(--primary);
+}
+
+.submit-button {
+  @apply px-6 py-3 rounded-lg font-medium transition-all duration-300;
+  background-color: var(--primary);
+  color: #1e1e2e;
+}
+
+.submit-button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(203, 166, 247, 0.3);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+}
+
+.nav-link {
+  color: var(--foreground);
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-link:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+.nav-link:hover:after {
+  width: 100%;
+}
+
+.dropdown-menu {
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.2s ease-out;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(203, 166, 247, 0.1);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(255, 255, 255, 0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.recruiter-job-card {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  transition: all 0.3s ease;
+}
+
+.recruiter-job-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+main, .space-y-6 {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.status-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-applied {
+  background-color: var(--info);
+  color: #1e1e2e;
+}
+
+.status-review {
+  background-color: var(--warning);
+  color: #1e1e2e;
+}
+
+.status-selected {
+  background-color: var(--success);
+  color: #1e1e2e;
+}
+
+.status-rejected {
+  background-color: var(--danger);
+  color: #1e1e2e;
+}
+
+.page-header {
+  @apply text-3xl font-semibold text-center uppercase tracking-wide;
+  color: var(--foreground);
+  position: relative;
+  display: inline-block;
+}
+
+.page-header:after {
+  content: '';
+  position: absolute;
+  width: 60px;
+  height: 3px;
+  background-color: var(--primary);
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.section-header {
+  @apply text-2xl font-semibold mb-4;
+  color: var(--foreground);
+  position: relative;
+  display: inline-block;
+}
+
+.section-header:after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background-color: var(--primary);
+  bottom: -6px;
+  left: 0;
+}
+
+.btn-primary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300;
+  background-color: var(--primary);
+  color: #1e1e2e;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(203, 166, 247, 0.3);
+}
+
+.btn-secondary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300;
+  background-color: var(--accent);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300;
+  background-color: var(--danger);
+  color: #1e1e2e;
+}
+
+.btn-danger:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.btn-icon {
+  @apply p-2 rounded-full transition-all duration-300;
+  background-color: var(--accent);
+  color: var(--foreground);
+}
+
+.btn-icon:hover {
+  background-color: var(--primary);
+  color: #1e1e2e;
+  transform: translateY(-2px);
+}
+
+.card {
+  @apply p-6 rounded-lg shadow-md;
+  background-color: var(--accent);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary);
+}
+
+.modal {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.notification {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background-color: var(--border);
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--primary);
+  transition: width 0.5s ease;
+}
+
+.skill-tag {
+  @apply px-2 py-1 rounded-full text-xs font-medium m-1 inline-block;
+  background-color: rgba(203, 166, 247, 0.2);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  transition: all 0.2s ease;
+}
+
+.skill-tag:hover {
+  background-color: var(--primary);
+  color: #1e1e2e;
+}
